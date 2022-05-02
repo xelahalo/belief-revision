@@ -20,7 +20,7 @@ def separate_formula_by_operator(op, formulas):
 
     def get_subformulas(subformulas):
         for f in subformulas:
-            if f.op == op:
+            if hasattr(f, 'ob') and f.op == op:
                 get_subformulas(f.args)
             else:
                 result.append(f)

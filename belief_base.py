@@ -1,16 +1,18 @@
 from operator import neg
-from sympy import Equivalent, ordered
+from sympy import Equivalent, ordered, pprint
 from sympy.logic import to_cnf, Or
 from belief import Belief
 from utils import apply_operator, get_conjunct_clauses, resolve
 
 class BeliefBase:
-    def __init__(self, beliefs):
+    def __init__(self, beliefs=None):
+        if beliefs is None:
+            beliefs = []
         self._beliefs = beliefs
 
     @property
     def beliefs(self):
-        return sorted(key=lambda b: b.order, reverse=True)
+        return sorted(self._beliefs, key=lambda b: b.order, reverse=True)
 
     def revise(self, belief):
         # ignore contradictions
@@ -84,8 +86,9 @@ class BeliefBase:
 
         formula = to_cnf(belief.formula)
 
-        clauses = [get_conjunct_clauses(to_cnf(belief.formula)) for belief in self.beliefs]
+        clauses = [clause for clause_sub in get_conjunct_clauses(to_cnf(belief.formula)) for clause in clause_sub for belief in self.beliefs]
         clauses.append(get_conjunct_clauses(to_cnf(~formula)))
+        print('Clauses', clauses)
         clauses = set(clauses)
 
         result = set()
@@ -168,4 +171,4 @@ class BeliefBase:
         for order, beliefs in self.belief_base.__iter__():
             print('Order:')
             for belief in beliefs:
-                print(belief.original_form)
+                pprint(belief.formula)
