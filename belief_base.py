@@ -163,3 +163,9 @@ class BeliefBase:
                 last_order = belief.order
 
         yield last_order, result
+
+    def print(self):
+        for order, beliefs in self.belief_base.__iter__():
+            print('Order:')
+            for belief in beliefs:
+                print(belief.original_form)
