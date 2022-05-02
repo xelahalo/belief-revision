@@ -59,7 +59,7 @@ class BeliefBase:
             self._reorder_beliefs(beliefs_to_reorder)
 
         if add:
-            self.add(belief)
+            self._add(belief)
 
     def contract(self, belief):
         beliefs_to_reorder = []
@@ -86,9 +86,13 @@ class BeliefBase:
 
         formula = to_cnf(belief.formula)
 
-        clauses = [clause for clause_sub in get_conjunct_clauses(to_cnf(belief.formula)) for clause in clause_sub for belief in self.beliefs]
-        clauses.append(get_conjunct_clauses(to_cnf(~formula)))
-        print('Clauses', clauses)
+        clauses = [get_conjunct_clauses(to_cnf(belief.formula)) for belief in self.beliefs]
+        sep_clauses = []
+        for sub_clauses in clauses:
+            for clause in sub_clauses:
+                sep_clauses.append(clause)
+        sep_clauses.extend(get_conjunct_clauses(to_cnf(~formula)))
+        clauses = sep_clauses
         clauses = set(clauses)
 
         result = set()
@@ -111,7 +115,7 @@ class BeliefBase:
 
     def _add(self, belief):
         self._remove_beliefs_by_formula(belief.formula)
-        self.beliefs.add(belief)
+        self.beliefs.append(belief)
 
     def _get_symbol_set(self):
         result_set = set()
@@ -168,7 +172,7 @@ class BeliefBase:
         yield last_order, result
 
     def print(self):
-        for order, beliefs in self.belief_base.__iter__():
+        for order, beliefs in self:
             print('Order:')
             for belief in beliefs:
                 pprint(belief.formula)
