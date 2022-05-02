@@ -3,6 +3,7 @@ from sympy import Equivalent, ordered, pprint
 from sympy.logic import to_cnf, Or
 from belief import Belief
 from utils import apply_operator, get_conjunct_clauses, resolve
+from copy import deepcopy
 
 class BeliefBase:
     def __init__(self, beliefs=None):
@@ -52,9 +53,9 @@ class BeliefBase:
 
                 degree = self._get_degree_of_proposed_belief(Belief(x >> y))
                 if BeliefBase([]).entails(Belief(Equivalent(x, y))) or b.order <= new_order < degree:
-                    beliefs_to_reorder.add((b, new_order))
+                    beliefs_to_reorder.append((b, new_order))
                 else:
-                    beliefs_to_reorder.add((belief, degree))
+                    beliefs_to_reorder.append((belief, degree))
 
             self._reorder_beliefs(beliefs_to_reorder)
 
@@ -86,7 +87,7 @@ class BeliefBase:
 
         formula = to_cnf(belief.formula)
 
-        clauses = [get_conjunct_clauses(to_cnf(belief.formula)) for belief in self.beliefs]
+        clauses = [get_conjunct_clauses(to_cnf(belief_t.formula)) for belief_t in self.beliefs]
         sep_clauses = []
         for sub_clauses in clauses:
             for clause in sub_clauses:
@@ -115,7 +116,7 @@ class BeliefBase:
 
     def _add(self, belief):
         self._remove_beliefs_by_formula(belief.formula)
-        self.beliefs.append(belief)
+        self._beliefs.append(belief)
 
     def _get_symbol_set(self):
         result_set = set()
@@ -129,10 +130,10 @@ class BeliefBase:
         if(BeliefBase([]).entails(belief)):
             return 1
 
-        beliefs = []
-        for o, b in self:
-            beliefs.append(b)
-            if BeliefBase(beliefs).entails(belief):
+        beliefs_ordered = []
+        for o, b in self.__iter__():
+            beliefs_ordered += [Belief(bel.formula, bel.order) for bel in b]
+            if BeliefBase(beliefs_ordered).entails(belief):
                 return o
         
         return 0
@@ -144,14 +145,14 @@ class BeliefBase:
                 beliefs_to_remove.append(belief)
 
         for belief in beliefs_to_remove:
-            self.beliefs.remove(belief)
+            self._beliefs.remove(belief)
 
     def _reorder_beliefs(self, beliefs_and_orders):
         for belief, order in beliefs_and_orders:
-            self.beliefs.remove(belief)
+            if belief in self._beliefs:
+                self._beliefs.remove(belief)
             if order > 0:
-                self.beliefs.add(Belief(belief.formula, order))
-
+                self._beliefs.append(Belief(belief.formula, order))
 
     def __iter__(self):
         result = []
@@ -173,6 +174,6 @@ class BeliefBase:
 
     def print(self):
         for order, beliefs in self:
-            print('Order:')
+            print('Order:' + str(order))
             for belief in beliefs:
                 pprint(belief.formula)
